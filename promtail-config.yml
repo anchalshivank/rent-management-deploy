@@ -1,0 +1,43 @@
+# promtail-config.yml
+# This file tells Promtail where to find your log files
+
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # Auth Service Logs
+  - job_name: auth-service
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: auth-service
+          service: auth-service
+          __path__: /var/log/apps/auth-service/*.log
+
+  # User Service Logs
+  - job_name: user-service
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: user-service
+          service: user-service
+          __path__: /var/log/apps/user-service/*.log
+
+  # Notification Service Logs
+  - job_name: notification-service
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: notification-service
+          service: notification-service
+          __path__: /var/log/apps/notification-service/*.log

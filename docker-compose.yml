@@ -1,6 +1,24 @@
 # Remove the version line - it's obsolete
 services:
 
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      args:
+        REACT_APP_AUTH_SERVER_URL: ${AUTH_SERVER_URL}
+        REACT_APP_NODE_ENV: ${NODE_ENV}
+    container_name: rent-frontend
+    ports:
+      - "3031:3031"
+    depends_on:
+      - auth-service
+      - user-service
+      - notification-service
+      - keycloak
+    networks:
+      - rent-network
+
   postgres-user:
     image: postgres:15
     container_name: rent-postgres-user

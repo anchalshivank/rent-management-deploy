@@ -3,6 +3,9 @@ set -e
 
 echo "🚀 Starting Rent Management System Deployment..."
 
+sudo chmod -R 777 logs/
+
+
 # Check if repos exist, if not clone them
 if [ ! -d "../frontend" ]; then
     echo "📦 Cloning frontend..."

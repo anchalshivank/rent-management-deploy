@@ -1,0 +1,181 @@
+# docker-compose.prod.yml
+# Production configuration - Backend services only
+# Frontend is deployed separately on Vercel
+
+services:
+
+  # Keycloak - Authentication Server
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: rent-keycloak
+    command: start --optimized
+    environment:
+      # Database config - AWS RDS
+      KC_DB: postgres
+      KC_DB_URL: ${RDS_KEYCLOAK_DB_URL}
+      KC_DB_USERNAME: ${KEYCLOAK_DB_USERNAME}
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+      
+      # Keycloak admin
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN_USER}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      
+      # Production settings
+      KC_HOSTNAME: ${KEYCLOAK_HOSTNAME}
+      KC_HOSTNAME_STRICT: false
+      KC_HTTP_ENABLED: true
+      KC_PROXY: edge
+      KC_HEALTH_ENABLED: true
+      
+      # Performance tuning
+      KC_DB_POOL_INITIAL_SIZE: 5
+      KC_DB_POOL_MIN_SIZE: 5
+      KC_DB_POOL_MAX_SIZE: 20
+    ports:
+      - "8080:8080"
+    networks:
+      - rent-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080;echo -e 'GET /health/ready HTTP/1.1\r\nhost: http://localhost\r\nConnection: close\r\n\r\n' >&3;grep 'HTTP/1.1 200 OK' <&3"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+
+  # Auth Service
+  auth-service:
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/rent-auth-service:${IMAGE_TAG:-latest}
+    container_name: rent-auth-service
+    environment:
+      # Spring profile
+      SPRING_PROFILES_ACTIVE: prod
+      
+      # Database - AWS RDS
+      SPRING_DATASOURCE_URL: ${RDS_USER_DB_URL}
+      SPRING_DATASOURCE_USERNAME: ${USER_DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${USER_DB_PASSWORD}
+      
+      # Database connection pool
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 10
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: 5
+      SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT: 20000
+      
+      # Keycloak config
+      KEYCLOAK_AUTH_SERVER_URL: ${KEYCLOAK_AUTH_SERVER_URL}
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM}
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
+      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID}
+      KEYCLOAK_ADMIN_USER: ${KEYCLOAK_ADMIN_USER}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      
+      # CORS - Allow Vercel frontend
+      ALLOWED_ORIGINS: ${FRONTEND_URL}
+      
+      # JVM settings
+      JAVA_OPTS: "-Xmx512m -Xms256m -XX:+UseG1GC"
+    ports:
+      - "8081:8081"
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    networks:
+      - rent-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8081/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+
+  # User Service
+  user-service:
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/rent-user-service:${IMAGE_TAG:-latest}
+    container_name: rent-user-service
+    environment:
+      # Spring profile
+      SPRING_PROFILES_ACTIVE: prod
+      
+      # Database - AWS RDS
+      SPRING_DATASOURCE_URL: ${RDS_USER_DB_URL}
+      SPRING_DATASOURCE_USERNAME: ${USER_DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${USER_DB_PASSWORD}
+      
+      # Database connection pool
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 10
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: 5
+      
+      # Keycloak config
+      KEYCLOAK_AUTH_SERVER_URL: http://keycloak:8080
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM}
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
+      
+      # CORS
+      ALLOWED_ORIGINS: ${FRONTEND_URL}
+      
+      # JVM settings
+      JAVA_OPTS: "-Xmx512m -Xms256m -XX:+UseG1GC"
+    ports:
+      - "8082:8080"
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    networks:
+      - rent-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+
+  # Notification Service
+  notification-service:
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/rent-notification-service:${IMAGE_TAG:-latest}
+    container_name: rent-notification-service
+    environment:
+      # Spring profile
+      SPRING_PROFILES_ACTIVE: prod
+      
+      # Database - AWS RDS
+      SPRING_DATASOURCE_URL: ${RDS_NOTIFICATION_DB_URL}
+      SPRING_DATASOURCE_USERNAME: ${NOTIFICATION_DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${NOTIFICATION_DB_PASSWORD}
+      
+      # Database connection pool
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 10
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: 5
+      
+      # Keycloak config
+      KEYCLOAK_AUTH_SERVER_URL: http://keycloak:8080
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM}
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
+      
+      # CORS
+      ALLOWED_ORIGINS: ${FRONTEND_URL}
+      
+      # JVM settings
+      JAVA_OPTS: "-Xmx512m -Xms256m -XX:+UseG1GC"
+    ports:
+      - "8083:8080"
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    networks:
+      - rent-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+
+networks:
+  rent-network:
+    driver: bridge
+
+# Note: No volumes needed for databases - using AWS RDS
+# No volumes needed for logs - use CloudWatch in production

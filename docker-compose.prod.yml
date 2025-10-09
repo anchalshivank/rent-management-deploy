@@ -8,7 +8,7 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:latest
     container_name: rent-keycloak
-    command: start --optimized
+    command: start-dev
     environment:
       # Database config - AWS RDS
       KC_DB: postgres

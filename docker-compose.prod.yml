@@ -93,88 +93,88 @@ services:
       start_period: 90s
 
   # User Service
-  user-service:
-    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/rent-user-service:${IMAGE_TAG:-latest}
-    container_name: rent-user-service
-    environment:
-      # Spring profile
-      SPRING_PROFILES_ACTIVE: prod
+  # user-service:
+  #   image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/rent-user-service:${IMAGE_TAG:-latest}
+  #   container_name: rent-user-service
+  #   environment:
+  #     # Spring profile
+  #     SPRING_PROFILES_ACTIVE: prod
       
-      # Database - AWS RDS
-      SPRING_DATASOURCE_URL: ${RDS_USER_DB_URL}
-      SPRING_DATASOURCE_USERNAME: ${USER_DB_USERNAME}
-      SPRING_DATASOURCE_PASSWORD: ${USER_DB_PASSWORD}
+  #     # Database - AWS RDS
+  #     SPRING_DATASOURCE_URL: ${RDS_USER_DB_URL}
+  #     SPRING_DATASOURCE_USERNAME: ${USER_DB_USERNAME}
+  #     SPRING_DATASOURCE_PASSWORD: ${USER_DB_PASSWORD}
       
-      # Database connection pool
-      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 10
-      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: 5
+  #     # Database connection pool
+  #     SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 10
+  #     SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: 5
       
-      # Keycloak config
-      KEYCLOAK_AUTH_SERVER_URL: http://keycloak:8080
-      KEYCLOAK_REALM: ${KEYCLOAK_REALM}
-      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
+  #     # Keycloak config
+  #     KEYCLOAK_AUTH_SERVER_URL: http://keycloak:8080
+  #     KEYCLOAK_REALM: ${KEYCLOAK_REALM}
+  #     KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
       
-      # CORS
-      ALLOWED_ORIGINS: ${FRONTEND_URL}
+  #     # CORS
+  #     ALLOWED_ORIGINS: ${FRONTEND_URL}
       
-      # JVM settings
-      JAVA_OPTS: "-Xmx512m -Xms256m -XX:+UseG1GC"
-    ports:
-      - "8082:8080"
-    depends_on:
-      keycloak:
-        condition: service_healthy
-    networks:
-      - rent-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 90s
+  #     # JVM settings
+  #     JAVA_OPTS: "-Xmx512m -Xms256m -XX:+UseG1GC"
+  #   ports:
+  #     - "8082:8080"
+  #   depends_on:
+  #     keycloak:
+  #       condition: service_healthy
+  #   networks:
+  #     - rent-network
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 90s
 
-  # Notification Service
-  notification-service:
-    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/rent-notification-service:${IMAGE_TAG:-latest}
-    container_name: rent-notification-service
-    environment:
-      # Spring profile
-      SPRING_PROFILES_ACTIVE: prod
+  # # Notification Service
+  # notification-service:
+  #   image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/rent-notification-service:${IMAGE_TAG:-latest}
+  #   container_name: rent-notification-service
+  #   environment:
+  #     # Spring profile
+  #     SPRING_PROFILES_ACTIVE: prod
       
-      # Database - AWS RDS
-      SPRING_DATASOURCE_URL: ${RDS_NOTIFICATION_DB_URL}
-      SPRING_DATASOURCE_USERNAME: ${NOTIFICATION_DB_USERNAME}
-      SPRING_DATASOURCE_PASSWORD: ${NOTIFICATION_DB_PASSWORD}
+  #     # Database - AWS RDS
+  #     SPRING_DATASOURCE_URL: ${RDS_NOTIFICATION_DB_URL}
+  #     SPRING_DATASOURCE_USERNAME: ${NOTIFICATION_DB_USERNAME}
+  #     SPRING_DATASOURCE_PASSWORD: ${NOTIFICATION_DB_PASSWORD}
       
-      # Database connection pool
-      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 10
-      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: 5
+  #     # Database connection pool
+  #     SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 10
+  #     SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: 5
       
-      # Keycloak config
-      KEYCLOAK_AUTH_SERVER_URL: http://keycloak:8080
-      KEYCLOAK_REALM: ${KEYCLOAK_REALM}
-      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
+  #     # Keycloak config
+  #     KEYCLOAK_AUTH_SERVER_URL: http://keycloak:8080
+  #     KEYCLOAK_REALM: ${KEYCLOAK_REALM}
+  #     KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
       
-      # CORS
-      ALLOWED_ORIGINS: ${FRONTEND_URL}
+  #     # CORS
+  #     ALLOWED_ORIGINS: ${FRONTEND_URL}
       
-      # JVM settings
-      JAVA_OPTS: "-Xmx512m -Xms256m -XX:+UseG1GC"
-    ports:
-      - "8083:8080"
-    depends_on:
-      keycloak:
-        condition: service_healthy
-    networks:
-      - rent-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 90s
+  #     # JVM settings
+  #     JAVA_OPTS: "-Xmx512m -Xms256m -XX:+UseG1GC"
+  #   ports:
+  #     - "8083:8080"
+  #   depends_on:
+  #     keycloak:
+  #       condition: service_healthy
+  #   networks:
+  #     - rent-network
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 90s
 
 networks:
   rent-network:

@@ -23,21 +23,24 @@ services:
       # Production settings
       KC_HOSTNAME: ${KEYCLOAK_HOSTNAME}
       KC_HOSTNAME_STRICT: false
+      KC_HOSTNAME_STRICT_HTTPS: false
       KC_HTTP_ENABLED: true
       KC_PROXY: edge
       KC_HEALTH_ENABLED: true
-      
+      KC_PROXY_HEADERS: xforwarded
+
       # Performance tuning
       KC_DB_POOL_INITIAL_SIZE: 5
       KC_DB_POOL_MIN_SIZE: 5
       KC_DB_POOL_MAX_SIZE: 20
     ports:
       - "8080:8080"
+      - "9000:9000"
     networks:
       - rent-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080;echo -e 'GET /health/ready HTTP/1.1\r\nhost: http://localhost\r\nConnection: close\r\n\r\n' >&3;grep 'HTTP/1.1 200 OK' <&3"]
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/9000;echo -e 'GET /health/ready HTTP/1.1\\r\\nhost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3;grep 'HTTP/1.1 200 OK' <&3"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -83,7 +86,7 @@ services:
       - rent-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8081/actuator/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8081/api/auth/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3

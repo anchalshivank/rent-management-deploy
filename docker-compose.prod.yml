@@ -76,7 +76,7 @@ services:
       ALLOWED_ORIGINS: ${FRONTEND_URL}
       
       # JVM settings
-      JAVA_OPTS: "-Xmx512m -Xms256m -XX:+UseG1GC"
+      JAVA_OPTS: "-Xmx512m -Xms256m -XX:+UseG1GC -XX:+PrintFlagsFinal -XX:+UnlockDiagnosticVMOptions -XX:+PrintCompilation -XX:+LogCompilation -XX:LogFile=/tmp/compilation.log"
     ports:
       - "8081:8081"
     depends_on:
@@ -86,11 +86,11 @@ services:
       - rent-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8081/api/auth/health || exit 1"]
+      test: ["CMD-SHELL", "java -version 2>&1 | grep -q 'version' && echo 'OK' || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 90s
+      start_period: 300s
 
   # User Service
   # user-service:

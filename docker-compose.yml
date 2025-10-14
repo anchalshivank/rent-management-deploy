@@ -1,24 +1,5 @@
 # Remove the version line - it's obsolete
 services:
-
-  frontend:
-    build:
-      context: ../frontend
-      dockerfile: Dockerfile
-      args:
-        REACT_APP_AUTH_SERVER_URL: ${AUTH_SERVER_URL}
-        REACT_APP_NODE_ENV: ${NODE_ENV}
-    container_name: rent-frontend
-    ports:
-      - "3031:3031"
-    depends_on:
-      - auth-service
-      - user-service
-      - notification-service
-      - keycloak
-    networks:
-      - rent-network
-
   postgres-user:
     image: postgres:15
     container_name: rent-postgres-user
@@ -33,19 +14,6 @@ services:
     networks:
       - rent-network
 
-  postgres-notification:
-    image: postgres:15
-    container_name: rent-postgres-notification
-    environment:
-      POSTGRES_DB: notification_db
-      POSTGRES_USER: notification_user
-      POSTGRES_PASSWORD: ${NOTIFICATION_DB_PASSWORD}
-    ports:
-      - "5434:5432"
-    volumes:
-      - postgres_notification_data:/var/lib/postgresql/data
-    networks:
-      - rent-network
 
   postgres-keycloak:
     image: postgres:15
@@ -107,112 +75,9 @@ services:
     networks:
       - rent-network
 
-  user-service:
-    build:
-      context: ../backend/user-service
-      dockerfile: Dockerfile
-    container_name: rent-user-service
-    environment:
-      SPRING_PROFILES_ACTIVE: local
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-user:5432/user_db
-      SPRING_DATASOURCE_USERNAME: user_user
-      SPRING_DATASOURCE_PASSWORD: ${USER_DB_PASSWORD}
-      KEYCLOAK_AUTH_SERVER_URL: http://keycloak:8080
-      KEYCLOAK_REALM: ${KEYCLOAK_REALM}
-      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
-    ports:
-      - "8082:8080"
-    depends_on:
-      - postgres-user
-      - keycloak
-    volumes:
-      - ./logs/user-service:/app/logs
-    networks:
-      - rent-network
-
-  notification-service:
-    build:
-      context: ../backend/notification-service
-      dockerfile: Dockerfile
-    container_name: rent-notification-service
-    environment:
-      SPRING_PROFILES_ACTIVE: local
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-notification:5432/notification_db
-      SPRING_DATASOURCE_USERNAME: notification_user
-      SPRING_DATASOURCE_PASSWORD: ${NOTIFICATION_DB_PASSWORD}
-      KEYCLOAK_AUTH_SERVER_URL: http://keycloak:8080
-      KEYCLOAK_REALM: ${KEYCLOAK_REALM}
-      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
-    ports:
-      - "8083:8080"
-    depends_on:
-      - postgres-notification
-      - keycloak
-    volumes:
-      - ./logs/notification-service:/app/logs
-    networks:
-      - rent-network
-
-  loki:
-    image: grafana/loki:2.9.0
-    container_name: rent-loki
-    ports:
-      - "3100:3100"
-    command: -config.file=/etc/loki/local-config.yaml
-    networks:
-      - rent-network
-    volumes:
-      - loki_data:/loki
-
-  # Promtail - Log collector (reads your log files)
-  promtail:
-    image: grafana/promtail:2.9.0
-    container_name: rent-promtail
-    volumes:
-      # This reads the log files from your services
-      - ./logs:/var/log/apps:ro
-      - ./promtail-config.yml:/etc/promtail/config.yml:ro
-    command: -config.file=/etc/promtail/config.yml
-    depends_on:
-      - loki
-    networks:
-      - rent-network
-
-  # Grafana - Visualization dashboard
-  grafana:
-    image: grafana/grafana:latest
-    container_name: rent-grafana
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-    volumes:
-      - grafana_data:/var/lib/grafana
-    depends_on:
-      - loki
-    networks:
-      - rent-network
-
-  # Prometheus - Metrics collection (optional, for advanced metrics)
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: rent-prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_data:/prometheus
-    networks:
-      - rent-network
-
 volumes:
   postgres_user_data:
-  postgres_notification_data:
   postgres_keycloak_data:
-  loki_data:
-  grafana_data:
-  prometheus_data:
 
 networks:
   rent-network:
